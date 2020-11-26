@@ -1,134 +1,119 @@
-import React, {useState} from 'react';
-import {View, StyleSheet, FlatList, Alert} from 'react-native';
-import {uuid} from 'uuidv4';
+import React, { useState, useEffect } from "react";
+import {
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  Button,
+  ScrollView
+} from "react-native";
+import AppBar from "./components/AppBar";
+import Todo from "./components/Todo";
+import TodoList from "./components/TodoList";
 
-import Header from './components/Header';
-import ListItem from './components/ListItem';
-import AddItem from './components/AddItem';
+export default function App() {
+  const [title, setTitle] = useState("");
 
-const App = () => {
-  const [items, setItems] = useState([
-    {
-      id: uuid(),
-      text: 'Milk',
-    },
-    {
-      id: uuid(),
-      text: 'Eggs',
-    },
-    {
-      id: uuid(),
-      text: 'Bread',
-    },
-    {
-      id: uuid(),
-      text: 'Juice',
-    },
-  ]);
+  // iniitalize empty object todo
+  const [todo, setTodo] = useState({});
 
-  // Flag true if user is currently editing an item
-  const [editStatus, editStatusChange] = useState(false);
+  // Initalize empty array to store todos
+  const [todos, setTodos] = useState([]);
 
-  // State to capture information about the item being edited
-  const [editItemDetail, editItemDetailChange] = useState({
-    id: null,
-    text: null,
-  });
-
-  const [checkedItems, checkedItemChange] = useState([]);
-
-  const deleteItem = id => {
-    setItems(prevItems => {
-      return prevItems.filter(item => item.id !== id);
-    });
-  };
-
-  // Submit the users edits to the overall items state
-  const saveEditItem = (id, text) => {
-    setItems(prevItems => {
-      return prevItems.map(item =>
-        item.id === editItemDetail.id ? {id, text: editItemDetail.text} : item,
-      );
-    });
-    // Flip edit status back to false
-    editStatusChange(!editStatus);
-  };
-
-  // Event handler to capture users text input as they edit an item
-  const handleEditChange = text => {
-    editItemDetailChange({id: editItemDetail.id, text});
-  };
-
-  const addItem = text => {
-    if (!text) {
-      Alert.alert(
-        'No item entered',
-        'Please enter an item when adding to your shopping list',
-        [
-          {
-            text: 'Understood',
-            style: 'cancel',
-          },
-        ],
-        {cancelable: true},
-      );
-    } else {
-      setItems(prevItems => {
-        return [{id: uuid(), text}, ...prevItems];
-      });
+  // function to add todo object in todo list
+  const addTodo = () => {
+    if (title.length > 0) {
+      // Add todo to the list
+      setTodos([...todos, { key: Date.now(), name: title, isChecked: false }]);
+      // clear the value of the textfield
+      setTitle("");
     }
   };
 
-  // capture old items ID and text when user clicks edit
-  const editItem = (id, text) => {
-    editItemDetailChange({
-      id,
-      text,
-    });
-    return editStatusChange(!editStatus);
+  // function to mark todo as checked or unchecked
+  const checkTodo = id => {
+    // loop through todo list and look for the the todo that matches the given id param
+    // update the state using setTodos function
+    setTodos(
+      todos.map(todo => {
+        if (todo.key === id) {
+          todo.isChecked = !todo.isChecked;
+        }
+        return todo;
+      })
+    );
   };
 
-  const itemChecked = (id, text) => {
-    const isChecked = checkedItems.filter(checkedItem => checkedItem.id === id);
-    isChecked.length
-      ? // remove item from checked items state (uncheck)
-        checkedItemChange(prevItems => {
-          return [...prevItems.filter(item => item.id !== id)];
-        })
-      : // Add item to checked items state
-        checkedItemChange(prevItems => {
-          return [...prevItems.filter(item => item.id !== id), {id, text}];
-        });
+  // function to delete todo from the todo list
+  const deleteTodo = id => {
+    // loop through todo list and return todos that don't match the id
+    // update the state using setTodos function
+    setTodos(todos.filter(todo => {
+      return todo.key !== id;
+    }));
   };
+
+  useEffect(() => {
+    console.log(todos.length, "TodoList length");
+    //console.log(todos);
+  }, [todos]);
 
   return (
     <View style={styles.container}>
-      <Header title="Shopping List" />
-      <AddItem addItem={addItem} />
-      <FlatList
-        data={items}
-        renderItem={({item}) => (
-          <ListItem
-            item={item}
-            deleteItem={deleteItem}
-            editItem={editItem}
-            isEditing={editStatus}
-            editItemDetail={editItemDetail}
-            saveEditItem={saveEditItem}
-            handleEditChange={handleEditChange}
-            itemChecked={itemChecked}
-            checkedItems={checkedItems}
-          />
-        )}
-      />
+      <View style={styles.statusBar}></View>
+      <AppBar />
+      <View style={styles.todo}>
+        <TextInput
+          placeholder="Add a todo"
+          value={title}
+          onChangeText={value => setTitle(value)}
+          style={styles.textbox}
+        />
+        <Button title="Add" color="#0FA20D" onPress={() => addTodo()} />
+      </View>
+
+      <ScrollView>
+        {todos.map(todo => (
+          <TodoList
+            key={todo.key}
+            todo={todo}
+            checkTodo={checkTodo}
+            deleteTodo={deleteTodo}
+            style={styles.textbox}
+            />
+        ))}
+      </ScrollView>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
+  statusBar: {
+    backgroundColor: "#000000",
+    color: "#fff",
+    width: "100%",
+    // height: 30
+  },
   container: {
     flex: 1,
+    backgroundColor: "#000000",//black
+    alignItems: "center",
+    justifyContent: "flex-start",
+    
+  },
+  todo: {
+    flexDirection: "row",
+    width: "100%",
+    justifyContent: "center",
+    alignItems: "center"
+  },
+  textbox: {
+    borderWidth: 1,
+    borderColor: "#ffffff",
+    borderRadius: 8,
+    backgroundColor: "#ffffff",
+    padding: 10,
+    margin: 10,
+    width: "80%"
   },
 });
-
-export default App;
